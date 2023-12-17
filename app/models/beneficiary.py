@@ -1,5 +1,5 @@
 from sqlalchemy_serializer import SerializerMixin;
-from base import db 
+from models.base import db 
 
 
 class Beneficiary(db.Model, SerializerMixin):

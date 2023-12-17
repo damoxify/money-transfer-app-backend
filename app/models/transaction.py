@@ -1,11 +1,13 @@
 from sqlalchemy_serializer import SerializerMixin;
-from base import db;
+from models.base import db;
+from sqlalchemy import Numeric
+
 
 class Transaction(db.Model, SerializerMixin):
     __tablename__ = 'transactions'
     
     id =db.Column(db.Integer, primary_key= True)
-    amount= db.Column(db.Decimal, nullable=False)
+    amount= db.Column(Numeric(precision=10, scale=2), nullable=False)
     narration=db.Column(db.String)
     user_id= db.Column(db.Integer, db.ForeignKey('users.id'))
     beneficiary_id =db.Column(db.Integer, db.ForeignKey('beneficiaries.id'))

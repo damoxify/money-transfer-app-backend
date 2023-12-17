@@ -1,5 +1,6 @@
 from sqlalchemy_serializer import SerializerMixin;
-from base import db
+from models.base import db
+from sqlalchemy import Numeric
 
 
 
@@ -9,7 +10,7 @@ class Wallet_account(db.Model, SerializerMixin):
     
     id= db.Column(db.Integer, primary_key=True)
     user_id= db.Column(db.Integer, db.ForeignKey('users.id'))
-    balance= db.Column(db.Decimal, nullable=False)
+    balance = db.Column(Numeric(precision=10, scale=2), nullable=False)
     
     
     def __repr__(self):
