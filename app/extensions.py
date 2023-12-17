@@ -8,10 +8,10 @@ migrate = Migrate()
 cors = CORS()
 jwt = JWTManager()
 
-def initialize_extensions(run):
-    db.init_app(run)
-    migrate.init_app(run, db)
-    cors.init_app(run)
-    jwt.init_app(run)
+def initialize_extensions(app):
+    db.init_app(app)
+    migrate.init_app(app, db)
+    cors.init_app(app)
+    jwt.init_app(app)
    
-    return run
+    return app
