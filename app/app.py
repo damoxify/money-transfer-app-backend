@@ -7,7 +7,7 @@ from models.user import User
 from models.wallet import Wallet_account
 from models.transaction import Transaction
 from models.beneficiary import Beneficiary
-from controllers import user_ns  # Import your namespaces
+from controllers import user_ns 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)

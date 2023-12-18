@@ -12,9 +12,6 @@ manager.add_command('runserver', Server(host='127.0.0.1', port=5000))
 
 initialize_extensions(app)
 
-# Register your namespaces here, for example:
-# api.add_namespace(user_ns)
-
 app.register_blueprint(swagger_namespace, url_prefix='/swagger')
 
 if __name__ == '__main__':
