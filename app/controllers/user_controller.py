@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
-from app.pagination.pagination import Pagination
-from app.models.user import User
+from pagination.pagination import Pagination
+from models.user import User
 
 user_bp = Blueprint('user', __name__)
 pagination = Pagination()
