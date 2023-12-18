@@ -1,8 +1,9 @@
 from sqlalchemy_serializer import SerializerMixin;
-from models.base import db
 from sqlalchemy import Numeric
+from flask_sqlalchemy import SQLAlchemy
 
 
+db = SQLAlchemy()
 
 class Wallet_account(db.Model, SerializerMixin):
     __tablename__ = "wallet_accounts"
