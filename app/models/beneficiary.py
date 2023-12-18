@@ -1,5 +1,9 @@
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin;
-from models.base import db 
+
+
+db = SQLAlchemy()
+
 
 
 class Beneficiary(db.Model, SerializerMixin):

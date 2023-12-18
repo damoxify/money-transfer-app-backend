@@ -1,11 +1,13 @@
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin;
-from models.base import db;
 from sqlalchemy import Numeric
 
 
+db = SQLAlchemy()
+
 class Transaction(db.Model, SerializerMixin):
     __tablename__ = 'transactions'
-    
+        
     id =db.Column(db.Integer, primary_key= True)
     amount= db.Column(Numeric(precision=10, scale=2), nullable=False)
     narration=db.Column(db.String)
