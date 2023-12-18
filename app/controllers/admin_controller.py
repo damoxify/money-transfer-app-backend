@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_restx import Namespace, Resource
-from app.models.transaction import Transaction  
-from app.models.user import User
+from models.transaction import Transaction  
+from models.user import User
 
 admin_bp = Blueprint('admin', __name__)
 

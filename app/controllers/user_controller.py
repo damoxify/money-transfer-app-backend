@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request
 from flask_restx import Namespace, Resource
 from app.pagination.pagination import Pagination
 from app.models.user import User
+from pagination.pagination import Pagination
+from models.user import User
 
 user_bp = Blueprint('user', __name__)
 user_ns = Namespace('user', description='User operations')

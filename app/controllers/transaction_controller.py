@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 from flask_restx import Namespace, Resource
-from app.pagination.pagination import Pagination
-from app.models.transaction import Transaction
+from pagination.pagination import Pagination
+from models.transaction import Transaction
+
 
 transaction_bp = Blueprint('transaction', __name__)
 transaction_ns = Namespace('transaction', description='Transaction operations')
