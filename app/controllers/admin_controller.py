@@ -1,33 +1,38 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
+from flask_restx import Namespace, Resource
 from app.models.transaction import Transaction  
-from app.models.user import User 
+from app.models.user import User
 
 admin_bp = Blueprint('admin', __name__)
 
-@admin_bp.route('/transactions', methods=['GET'])
-def list_all_transactions():
-    try:
-        transactions = Transaction.query.all()
+admin_ns = Namespace('admin', description='Admin operations')
 
-        response = {
-            'transactions': [{'id': transaction.id, 'amount': transaction.amount} for transaction in transactions],
-        }
+@admin_ns.route('/transactions', methods=['GET'])
+class ListAllTransactions(Resource):
+    def get(self):
+        try:
+            transactions = Transaction.query.all()
 
-        return jsonify(response), 200
+            response = {
+                'transactions': [{'id': transaction.id, 'amount': transaction.amount} for transaction in transactions],
+            }
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            return jsonify(response), 200
 
-@admin_bp.route('/users', methods=['GET'])
-def list_all_users():
-    try:
-        users = User.query.all()
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
-        response = {
-            'users': [{'id': user.id, 'username': user.username} for user in users],
-        }
+@admin_ns.route('/users', methods=['GET'])
+class ListAllUsers(Resource):
+    def get(self):
+        try:
+            users = User.query.all()
 
-        return jsonify(response), 200
+            response = {
+                'users': [{'id': user.id, 'username': user.username} for user in users],
+            }
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            return jsonify(response), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
