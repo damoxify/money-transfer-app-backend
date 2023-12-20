@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_restx import Namespace, Resource
 from pagination.pagination import Pagination
 from models.user import User
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 user_bp = Blueprint('user', __name__)
 user_ns = Namespace('user', description='User operations')
@@ -10,8 +10,12 @@ pagination = Pagination()
 
 @user_ns.route('/list', methods=['GET'])
 class ListUsers(Resource):
+    @jwt_required()  
     def get(self):
         try:
+            current_user = get_jwt_identity()
+            print(f"Authenticated user: {current_user}")
+
             page = request.args.get('page', default=1, type=int)
             per_page = request.args.get('per_page', default=10, type=int)
 
