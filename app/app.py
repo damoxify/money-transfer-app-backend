@@ -1,4 +1,3 @@
-
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -22,7 +21,6 @@ api = Api(app, version='1.0', title='Money Transfer App API', description='API d
 api.add_namespace(admin_ns)
 api.add_namespace(transaction_ns)
 api.add_namespace(user_ns)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
