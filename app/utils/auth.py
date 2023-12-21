@@ -1,4 +1,4 @@
-from flask import current_app, g, request
+from flask import current_app, g
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired
 from app.models.user import User
 
@@ -15,4 +15,3 @@ def verify_token(token):
         return True
     except (BadSignature, SignatureExpired):
         return False
-
