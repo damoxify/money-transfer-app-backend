@@ -4,6 +4,7 @@ class Config:
     DEBUG = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+
     # Add a secret key for securing sessions and CSRF protection
     SECRET_KEY = 'your_secret_key'
 
@@ -28,3 +29,4 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost:5432/your_database'
 
     # Add other configurations as needed
+    SWAGGER_PATH = 'swagger.yaml'
