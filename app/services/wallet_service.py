@@ -1,15 +1,14 @@
 from app import db
-from app.models.wallet import Wallet_account 
+from app.models.wallet import WalletAccount
 
 class WalletService:
     @staticmethod
     def create_wallet(user_id):
-
         try:
             if not user_id:
                 raise ValueError("Invalid user_id for creating a wallet")
 
-            new_wallet = Wallet_account(user_id=user_id)
+            new_wallet = WalletAccount(user_id=user_id)
             db.session.add(new_wallet)
             db.session.commit()
 
@@ -21,12 +20,11 @@ class WalletService:
 
     @staticmethod
     def get_wallet_by_user_id(user_id):
- 
         try:
             if not user_id:
                 raise ValueError("Invalid user_id for retrieving a wallet")
 
-            return Wallet_account.query.filter_by(user_id=user_id).first()
+            return WalletAccount.query.filter_by(user_id=user_id).first()
 
         except Exception as e:
             raise e

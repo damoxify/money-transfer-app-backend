@@ -1,4 +1,3 @@
-
 from app import db
 from app.models.transaction import Transaction
 from wallet_service import WalletService
@@ -6,7 +5,6 @@ from wallet_service import WalletService
 class TransactionService:
     @staticmethod
     def create_transaction(sender_wallet_id, recipient_wallet_id, amount):
-
         try:
             if not sender_wallet_id or not recipient_wallet_id or amount <= 0:
                 raise ValueError("Invalid input parameters for creating a transaction")
