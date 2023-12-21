@@ -1,15 +1,15 @@
 from flask import Flask
+import os
 
 class Config:
     DEBUG = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-
-    # Add a secret key for securing sessions and CSRF protection
-    SECRET_KEY = 'your_secret_key'
+    # Use a secure random key for Flask sessions and CSRF protection
+    SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'default_secret_key')
 
     # Configuration for JWT (JSON Web Tokens) authentication
-    JWT_SECRET_KEY = 'your_jwt_secret_key'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'default_jwt_secret_key')
     JWT_BLACKLIST_ENABLED = True
     JWT_BLACKLIST_TOKEN_CHECKS = ['access', 'refresh']
 
@@ -24,9 +24,9 @@ class Config:
         'USER': ['read'],
         'ADMIN': ['read', 'write', 'admin'],
     }
-    
-    # Define the SQLAlchemy Database URI
-    SQLALCHEMY_DATABASE_URI = 'postgresql://username:password@localhost:5432/your_database'
+
+    # Use environment variables for the SQLAlchemy Database URI
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://username:password@localhost:5432/your_database')
 
     # Add other configurations as needed
     SWAGGER_PATH = 'swagger.yaml'
