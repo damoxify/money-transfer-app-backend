@@ -1,6 +1,6 @@
 from flask_script import Manager, Server
 from flask_migrate import Migrate, MigrateCommand
-from app import create_app, db
+from app.app import create_app, db
 from app.swagger import swagger_namespace
 
 app = create_app()

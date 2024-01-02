@@ -26,7 +26,7 @@ class Config:
     }
 
     # Use environment variables for the SQLAlchemy Database URI
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://username:password@localhost:5432/your_database')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://postgres:postgres@localhost:5432/money_transfer_app_db')
 
     # Add other configurations as needed
     SWAGGER_PATH = 'swagger.yaml'
