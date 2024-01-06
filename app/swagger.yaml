@@ -1,0 +1,267 @@
+swagger: '2.0'
+info:
+  title: Money Transfer App API
+  version: 1.0.0
+  description: API documentation for the Money Transfer App
+basePath: /
+paths:
+  /api/users:
+    post:
+      summary: Create a new user account
+      tags:
+        - Users
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '201':
+          description: User account created successfully
+  /api/login:
+    post:
+      summary: User login
+      tags:
+        - Users
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: User logged in successfully
+  /api/wallet/analytics:
+    get:
+      summary: View wallet analytics
+      tags:
+        - Wallet
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Wallet analytics data
+  /api/users/{user_id}:
+    get:
+      summary: View user profile
+      tags:
+        - Users
+      produces:
+        - application/json
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: User profile details
+    put:
+      summary: Update user profile
+      tags:
+        - Users
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: User profile updated successfully
+  /api/wallet/add-funds:
+    post:
+      summary: Add funds to the wallet
+      tags:
+        - Wallet
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '201':
+          description: Funds added successfully
+  /api/beneficiaries:
+    post:
+      summary: Add a beneficiary
+      tags:
+        - Beneficiaries
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '201':
+          description: Beneficiary added successfully
+  /api/transactions/send-money:
+    post:
+      summary: Send money to a beneficiary
+      tags:
+        - Transactions
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '201':
+          description: Money sent successfully
+  /api/transactions/summary:
+    get:
+      summary: View transaction summary
+      tags:
+        - Transactions
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Transaction summary
+  /api/admin/users:
+    get:
+      summary: Get all users
+      tags:
+        - Admin
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: List of all users
+    post:
+      summary: Create a new user (Admin)
+      tags:
+        - Admin
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '201':
+          description: User created successfully
+    put:
+      summary: Update user details (Admin)
+      tags:
+        - Admin
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: User details updated successfully
+    delete:
+      summary: Delete a user (Admin)
+      tags:
+        - Admin
+      produces:
+        - application/json
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          type: integer
+      responses:
+        '204':
+          description: User deleted successfully
+  /api/admin/transactions/summary:
+    get:
+      summary: Get transaction summary for all users (Admin)
+      tags:
+        - Admin
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Transaction summary for all users
+  /api/admin/wallets/analytics:
+    get:
+      summary: Get analytics of all user wallet accounts (Admin)
+      tags:
+        - Admin
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Analytics of all user wallet accounts
+  /api/admin/profit-trends:
+    get:
+      summary: View trends in profits (Admin)
+      tags:
+        - Admin
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: Profit trends
+definitions:
+  UserInput:
+    type: object
+    properties:
+      username:
+        type: string
+      email:
+        type: string
+    required:
+      - username
+      - email
+  LoginInput:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+    required:
+      - username
+      - password
+  AccessToken:
+    type: object
+    properties:
+      access_token:
+        type: string
+  FundsInput:
+    type: object
+    properties:
+      amount:
+        type: number
+    required:
+      - amount
+  BeneficiaryInput:
+    type: object
+    properties:
+      name:
+        type: string
+      account_number:
+        type: string
+    required:
+      - name
+      - account_number
+  SendMoneyInput:
+    type: object
+    properties:
+      beneficiary_id:
+        type: integer
+      amount:
+        type: number
+    required:
+      - beneficiary_id
+      - amount
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+security:
+  - BearerAuth: []
