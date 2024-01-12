@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 from flask import Flask, request, make_response, jsonify
 from flask_migrate import Migrate
+from flask import request, jsonify, g
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
+
 import os
 
 app = Flask(__name__)
@@ -16,7 +21,7 @@ migrate = Migrate(app, db)
 
 
 db.init_app(app)
-
+jwt = JWTManager(app)
 
 @app.route('/')
 def home():
@@ -28,11 +33,27 @@ def home():
 @app.route('/users', methods=['POST'])
 def create_user():
     data = request.get_json()
+
+    required_fields = ['username', 'fullname', 'email', 'password']
+    if not all(field in data for field in required_fields):
+        return jsonify(message="Missing required fields"), 400
+
+    existing_user = User.query.filter_by(email=data['email']).first()
+    if existing_user:
+        return jsonify(message="User with this email already exists"), 409
+
+    hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
+
+    data['password'] = hashed_password
+    data['registered_on'] = datetime.utcnow()
+
     new_user = User(**data)
     db.session.add(new_user)
     db.session.commit()
+    
     user_dict = new_user.to_dict()
     return make_response(jsonify(user_dict), 201)
+
 
 
 @app.route('/users/<int:user_id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -58,8 +79,146 @@ def manage_user(user_id):
         db.session.commit()
         return jsonify(message="User deleted"), 200
 
+@app.route('/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        user = User.query.filter_by(email=email).first()
+
+        if user and check_password_hash(user.password, password):
+            user.is_authenticated = True
+            db.session.commit()
+
+            access_token = create_access_token(identity=user.id)
+
+            return jsonify({"message": "Login successful", "access_token": access_token, "user": user.to_dict()}), 200
+        else:
+            return jsonify({"message": "Invalid email or password"}), 401
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Internal server error"}), 500
 
 
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if user:
+            user.is_authenticated = False
+            db.session.commit()
+
+
+            return jsonify({"message": "Logout successful"}), 200
+        else:
+            return jsonify({"message": "User not found"}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Internal server error"}), 500
+
+
+
+
+# Admin-related routes
+@app.route('/admin/users', methods=['GET', 'POST'])
+def manage_users():
+    if request.method == 'GET':
+        try:
+            users = User.query.all()
+            users_list = [user.to_dict() for user in users]
+            return make_response(jsonify(users_list), 200)
+        except Exception as e:
+            return make_response(jsonify(message="Error retrieving users"), 500)
+
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+
+            if not all(key in data for key in ['username', 'password', 'fullname', 'email']):
+                return make_response(jsonify(message="Incomplete user data"), 400)
+
+            new_user = User(**data)
+            db.session.add(new_user)
+            db.session.commit()
+            user_dict = new_user.to_dict()
+            return make_response(jsonify(user_dict), 201)
+        except Exception as e:
+            return make_response(jsonify(message="Error creating user"), 500)
+
+@app.route('/admin/transactions', methods=['GET'])
+def view_transactions():
+    try:
+        transactions = Transaction.query.all()
+        transactions_list = [transaction.to_dict() for transaction in transactions]
+        return make_response(jsonify(transactions_list), 200)
+    except Exception as e:
+        return make_response(jsonify(message="Error retrieving transactions"), 500)
+
+@app.route('/admin/wallet-analytics', methods=['GET'])
+def view_wallet_analytics_admin():
+    try:
+       
+        wallet_accounts = WalletAccount.query.all()
+        total_balance = sum([wallet.balance for wallet in wallet_accounts])
+        average_balance = total_balance / len(wallet_accounts)
+
+        analytics_data = {
+            "total_balance": total_balance,
+            "average_balance": average_balance,
+        }
+
+        return make_response(jsonify(analytics_data), 200)
+    except Exception as e:
+        return make_response(jsonify(message="Error retrieving wallet analytics"), 500)
+
+@app.route('/admin/profit-trends', methods=['GET'])
+def view_profit_trends():
+    try:
+        
+        profit_transactions = Transaction.query.filter(Transaction.amount > 0).all()
+        profit_transactions_list = [transaction.to_dict() for transaction in profit_transactions]
+
+        return make_response(jsonify(profit_transactions_list), 200)
+    except Exception as e:
+        return make_response(jsonify(message="Error retrieving profit trends"), 500)
+    
+
+
+
+
+
+@app.route('/dashboard', methods=['GET'])
+@jwt_required()
+def get_dashboard_data():
+    try:
+        current_user_id = get_jwt_identity()
+
+        print(f'Current User ID: {current_user_id}')  
+
+        user = User.query.get(current_user_id)
+
+        if user:
+            return jsonify({
+                'user': {
+                    'username': user.username,
+                    'email': user.email,
+                },
+                'message': 'User data retrieved successfully'
+            }), 200
+        else:
+            print('User not found in the database') 
+            return jsonify({'message': 'User not found'}), 404
+
+    except Exception as e:
+        app.logger.error(f'Error fetching user data: {str(e)}')
+        return jsonify({'message': 'Internal Server Error'}), 500
 
 # Wallet Account-related routes
 @app.route('/wallets', methods=['POST'])

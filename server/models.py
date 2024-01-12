@@ -36,9 +36,6 @@ class Transaction(db.Model, SerializerMixin):
 
     user = db.relationship('User', back_populates='transactions')
     beneficiary = db.relationship('Beneficiary', back_populates='transactions')
-    
-    def __repr__(self):
-        return f'<Transaction {self.id}: {self.amount}, {self.user_id}>'
 
 class User(db.Model, SerializerMixin):
     __tablename__ = "users"
@@ -52,10 +49,11 @@ class User(db.Model, SerializerMixin):
     digital_signature = db.Column(db.String(255))
     admin = db.Column(db.Boolean, nullable=False, default=False)
     registered_on = db.Column(db.DateTime, nullable=False)
+    is_authenticated = db.Column(db.Boolean, default=False)
     
     wallet_accounts = db.relationship('WalletAccount', backref="user", cascade='all, delete-orphan')
-    beneficiaries = db.relationship('Beneficiary', backref="user", cascade='all, delete-orphan')
-    transactions = db.relationship('Transaction', secondary='beneficiaries', back_populates='users')
+    beneficiaries = db.relationship('Beneficiary', back_populates='user', cascade='all, delete-orphan')
+    transactions = db.relationship('Transaction', secondary='beneficiaries', back_populates='user')
     
     def __repr__(self):
         return f'<User {self.username}: {self.fullname}, {self.email}>'
