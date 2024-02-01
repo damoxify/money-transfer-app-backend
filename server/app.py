@@ -57,7 +57,7 @@ def create_user():
 
 
 @app.route('/users/<int:user_id>', methods=['GET', 'PATCH', 'DELETE'])
-def manage_user(user_id):
+def modify_user(user_id):
     user = User.query.get(user_id)
     if user is None:
         return jsonify(message="User not found"), 404
@@ -128,7 +128,7 @@ def logout():
 
 # Admin-related routes
 @app.route('/admin/users', methods=['GET', 'POST'])
-def manage_users():
+def add_users():
     if request.method == 'GET':
         try:
             users = User.query.all()
@@ -151,6 +151,45 @@ def manage_users():
             return make_response(jsonify(user_dict), 201)
         except Exception as e:
             return make_response(jsonify(message="Error creating user"), 500)
+
+
+@app.route('/admin/users/<int:user_id>', methods=['GET', 'PUT'])
+def manage_user(user_id):
+    if request.method == 'GET':
+        try:
+            user = User.query.get(user_id)
+            if user:
+                user_dict = user.to_dict()
+                return make_response(jsonify(user_dict), 200)
+            else:
+                return make_response(jsonify(message="User not found"), 404)
+        except Exception as e:
+            return make_response(jsonify(message="Error retrieving user"), 500)
+
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+
+            if not all(key in data for key in ['username', 'password', 'fullname', 'email']):
+                return make_response(jsonify(message="Incomplete user data"), 400)
+
+            user = User.query.get(user_id)
+
+            if user:
+                user.username = data['username']
+                user.password = data['password']
+                user.fullname = data['fullname']
+                user.email = data['email']
+
+                db.session.commit()
+
+                user_dict = user.to_dict()
+                return make_response(jsonify(user_dict), 200)
+            else:
+                return make_response(jsonify(message="User not found"), 404)
+        except Exception as e:
+            return make_response(jsonify(message="Error updating user"), 500)
+
 
 @app.route('/admin/transactions', methods=['GET'])
 def view_transactions():
