@@ -2,11 +2,12 @@
 from flask import Flask, request, make_response, jsonify
 from flask_migrate import Migrate
 from flask import request, jsonify, g
+from flasgger import Swagger
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
-
 import os
+from models import db, User, WalletAccount, Beneficiary, Transaction
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -14,19 +15,17 @@ app.config.from_object('config.DevelopmentConfig')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-
 from models import db, User, WalletAccount, Beneficiary, Transaction
 
 migrate = Migrate(app, db)
-
-
 db.init_app(app)
 jwt = JWTManager(app)
+
+Swagger(app, template_file='swagger.json', parse=True)
 
 @app.route('/')
 def home():
     return '<h1>Money Transfer App API</h1>'
-
 
 
 # User-related routes
@@ -50,10 +49,9 @@ def create_user():
     new_user = User(**data)
     db.session.add(new_user)
     db.session.commit()
-    
+
     user_dict = new_user.to_dict()
     return make_response(jsonify(user_dict), 201)
-
 
 
 @app.route('/users/<int:user_id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -78,6 +76,7 @@ def modify_user(user_id):
         db.session.delete(user)
         db.session.commit()
         return jsonify(message="User deleted"), 200
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -114,7 +113,6 @@ def logout():
             user.is_authenticated = False
             db.session.commit()
 
-
             return jsonify({"message": "Logout successful"}), 200
         else:
             return jsonify({"message": "User not found"}), 404
@@ -122,8 +120,6 @@ def logout():
     except Exception as e:
         print(e)
         return jsonify({"message": "Internal server error"}), 500
-
-
 
 
 # Admin-related routes
@@ -200,10 +196,10 @@ def view_transactions():
     except Exception as e:
         return make_response(jsonify(message="Error retrieving transactions"), 500)
 
+
 @app.route('/admin/wallet-analytics', methods=['GET'])
 def view_wallet_analytics_admin():
     try:
-       
         wallet_accounts = WalletAccount.query.all()
         total_balance = sum([wallet.balance for wallet in wallet_accounts])
         average_balance = total_balance / len(wallet_accounts)
@@ -217,20 +213,16 @@ def view_wallet_analytics_admin():
     except Exception as e:
         return make_response(jsonify(message="Error retrieving wallet analytics"), 500)
 
+
 @app.route('/admin/profit-trends', methods=['GET'])
 def view_profit_trends():
     try:
-        
         profit_transactions = Transaction.query.filter(Transaction.amount > 0).all()
         profit_transactions_list = [transaction.to_dict() for transaction in profit_transactions]
 
         return make_response(jsonify(profit_transactions_list), 200)
     except Exception as e:
         return make_response(jsonify(message="Error retrieving profit trends"), 500)
-    
-
-
-
 
 
 @app.route('/dashboard', methods=['GET'])
@@ -238,9 +230,6 @@ def view_profit_trends():
 def get_dashboard_data():
     try:
         current_user_id = get_jwt_identity()
-
-        print(f'Current User ID: {current_user_id}')  
-
         user = User.query.get(current_user_id)
 
         if user:
@@ -252,12 +241,12 @@ def get_dashboard_data():
                 'message': 'User data retrieved successfully'
             }), 200
         else:
-            print('User not found in the database') 
             return jsonify({'message': 'User not found'}), 404
 
     except Exception as e:
         app.logger.error(f'Error fetching user data: {str(e)}')
         return jsonify({'message': 'Internal Server Error'}), 500
+
 
 # Wallet Account-related routes
 @app.route('/wallets', methods=['POST'])
@@ -265,20 +254,17 @@ def create_wallet_account():
     data = request.get_json()
     user_id = data.get('user_id')
     user = User.query.get(user_id)
-    
+
     if user is None:
         return jsonify(message="User not found"), 404
-    
+
     new_wallet_account = WalletAccount(**data)
     user.wallet_accounts.append(new_wallet_account)
-    
+
     db.session.commit()
-    
+
     wallet_account_dict = new_wallet_account.to_dict()
     return make_response(jsonify(wallet_account_dict), 201)
-
-
-
 
 
 # Beneficiary-related routes
@@ -298,6 +284,7 @@ def add_beneficiary():
 
     beneficiary_dict = new_beneficiary.to_dict()
     return make_response(jsonify(beneficiary_dict), 201)
+
 
 @app.route('/beneficiaries/<int:beneficiary_id>', methods=['GET', 'PATCH', 'DELETE'])
 def manage_beneficiary(beneficiary_id):
@@ -321,10 +308,6 @@ def manage_beneficiary(beneficiary_id):
         db.session.delete(beneficiary)
         db.session.commit()
         return jsonify(message="Beneficiary deleted"), 200
-
-
-
-
 
 
 # Transaction-related routes
@@ -351,6 +334,7 @@ def make_transaction():
     transaction_dict = new_transaction.to_dict()
     return make_response(jsonify(transaction_dict), 201)
 
+
 @app.route('/transactions/<int:transaction_id>', methods=['GET', 'PATCH', 'DELETE'])
 def manage_transaction(transaction_id):
     transaction = Transaction.query.get(transaction_id)
@@ -373,7 +357,6 @@ def manage_transaction(transaction_id):
         db.session.delete(transaction)
         db.session.commit()
         return jsonify(message="Transaction deleted"), 200
-
 
 
 if __name__ == '__main__':
