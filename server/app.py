@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import stripe
 from flask import Flask, request, make_response, jsonify
 from flask_migrate import Migrate
 from flask import request, jsonify, g
@@ -14,6 +15,11 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 app.config.from_object('config.DevelopmentConfig')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
+
+app.config['STRIPE_PUBLIC_KEY'] = 'pk_test_51OfgMzJP7w8pBK39GagNwazGpaWi3Na2c9NQ0XrYM4BoMDwTHlK0pmLvGJhUk1vzfTFLVSlF8jiIJgKtGPlVx57t00kqYJTGoZ'
+app.config['STRIPE_SECRET_KEY'] = 'sk_test_51OfgMzJP7w8pBK395uDPjVkhfos6rW48FToqDPQTgEpBoRHrNvl2oVREZTw8DXhg88KH3kQdtHt8QWks9vPHUAAR00vYN2PeWH'
+stripe.api_key = app.config['STRIPE_SECRET_KEY']
+
 
 from models import db, User, WalletAccount, Beneficiary, Transaction
 
@@ -54,13 +60,31 @@ def create_user():
     return make_response(jsonify(user_dict), 201)
 
 
-@app.route('/users/<int:user_id>', methods=['GET', 'PATCH', 'DELETE'])
+@app.route('/users/<int:user_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
 def modify_user(user_id):
     user = User.query.get(user_id)
     if user is None:
         return jsonify(message="User not found"), 404
 
     if request.method == 'GET':
+        user_dict = user.to_dict()
+        return make_response(jsonify(user_dict), 200)
+
+    elif request.method == 'PUT':
+        data = request.get_json()
+        # Ensure all required fields are present
+        required_fields = ['username', 'fullname', 'email', 'password']
+        if not all(field in data for field in required_fields):
+            return jsonify(message="Missing required fields"), 400
+
+        # Update user data
+        user.username = data['username']
+        user.fullname = data['fullname']
+        user.email = data['email']
+        user.password = generate_password_hash(data['password'], method='pbkdf2:sha256')
+
+        db.session.commit()
+
         user_dict = user.to_dict()
         return make_response(jsonify(user_dict), 200)
 
@@ -76,7 +100,6 @@ def modify_user(user_id):
         db.session.delete(user)
         db.session.commit()
         return jsonify(message="User deleted"), 200
-
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -268,23 +291,51 @@ def create_wallet_account():
 
 
 # Beneficiary-related routes
-@app.route('/beneficiaries', methods=['POST'])
-def add_beneficiary():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    user = User.query.get(user_id)
+@app.route('/beneficiaries', methods=['GET', 'POST'])
+def manage_beneficiaries():
+    if request.method == 'GET':
+        beneficiaries = Beneficiary.query.all()
+        beneficiaries_list = []
 
-    if user is None:
-        return jsonify(message="User not found"), 404
+        for beneficiary in beneficiaries:
+            beneficiary_dict = {
+                'id': beneficiary.id,
+                'name': beneficiary.name,
+                'account_number': beneficiary.account_number,
+                'bank': beneficiary.bank,
+                'user_id': beneficiary.user_id
+                # Add other fields as needed
+            }
+            beneficiaries_list.append(beneficiary_dict)
 
-    new_beneficiary = Beneficiary(**data)
-    user.beneficiaries.append(new_beneficiary)
+        return jsonify(beneficiaries_list), 200
 
-    db.session.commit()
+    elif request.method == 'POST':
+        data = request.get_json()
+        user_id = data.get('user_id')
 
-    beneficiary_dict = new_beneficiary.to_dict()
-    return make_response(jsonify(beneficiary_dict), 201)
+        if user_id is None:
+            return jsonify(message="User ID is required"), 400
 
+        user = User.query.get(user_id)
+
+        if user is None:
+            return jsonify(message="User not found"), 404
+
+        new_beneficiary = Beneficiary(**data)
+        user.beneficiaries.append(new_beneficiary)
+
+        db.session.commit()
+
+        beneficiary_dict = {
+            'id': new_beneficiary.id,
+            'name': new_beneficiary.name,
+            'account_number': new_beneficiary.account_number,
+            'bank': new_beneficiary.bank,
+            'user_id': new_beneficiary.user_id
+        }
+
+        return jsonify(beneficiary_dict), 201
 
 @app.route('/beneficiaries/<int:beneficiary_id>', methods=['GET', 'PATCH', 'DELETE'])
 def manage_beneficiary(beneficiary_id):
@@ -357,6 +408,18 @@ def manage_transaction(transaction_id):
         db.session.delete(transaction)
         db.session.commit()
         return jsonify(message="Transaction deleted"), 200
+
+@app.route('/create-payment-intent', methods=['POST'])
+def create_payment_intent():
+    data = request.get_json()
+    amount = data.get('amount')
+
+    payment_intent = stripe.PaymentIntent.create(
+        amount=amount,
+        currency='usd',
+    )
+
+    return jsonify({'clientSecret': payment_intent.client_secret})
 
 
 if __name__ == '__main__':

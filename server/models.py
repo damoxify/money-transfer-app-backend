@@ -13,6 +13,8 @@ db = SQLAlchemy(metadata=metadata)
 
 class Beneficiary(db.Model, SerializerMixin):
     __tablename__ = "beneficiaries"
+
+    serialize_rules = ('-beneficiaries')
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
