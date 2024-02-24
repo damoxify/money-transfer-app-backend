@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import stripe
+# import stripe
+import os
+import requests
 from flask import Flask, request, make_response, jsonify
 from flask_migrate import Migrate
 from flask import request, jsonify, g
@@ -7,7 +9,6 @@ from flasgger import Swagger
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import os
 from models import db, User, WalletAccount, Beneficiary, Transaction
 
 app = Flask(__name__)
@@ -16,9 +17,14 @@ app.config.from_object('config.DevelopmentConfig')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-app.config['STRIPE_PUBLIC_KEY'] = 'pk_test_51OfgMzJP7w8pBK39GagNwazGpaWi3Na2c9NQ0XrYM4BoMDwTHlK0pmLvGJhUk1vzfTFLVSlF8jiIJgKtGPlVx57t00kqYJTGoZ'
-app.config['STRIPE_SECRET_KEY'] = 'sk_test_51OfgMzJP7w8pBK395uDPjVkhfos6rW48FToqDPQTgEpBoRHrNvl2oVREZTw8DXhg88KH3kQdtHt8QWks9vPHUAAR00vYN2PeWH'
-stripe.api_key = app.config['STRIPE_SECRET_KEY']
+# app.config['STRIPE_PUBLIC_KEY'] = 'pk_test_51OfgMzJP7w8pBK39GagNwazGpaWi3Na2c9NQ0XrYM4BoMDwTHlK0pmLvGJhUk1vzfTFLVSlF8jiIJgKtGPlVx57t00kqYJTGoZ'
+# app.config['STRIPE_SECRET_KEY'] = 'sk_test_51OfgMzJP7w8pBK395uDPjVkhfos6rW48FToqDPQTgEpBoRHrNvl2oVREZTw8DXhg88KH3kQdtHt8QWks9vPHUAAR00vYN2PeWH'
+# stripe.api_key = app.config['STRIPE_SECRET_KEY']
+
+PAYSTACK_API_URL = 'https://api.paystack.co/transaction/initialize'
+
+# Paystack secret key
+PAYSTACK_SECRET_KEY = 'sk_test_f56c118d4e318cf84668aa1b3514b1985d565136'
 
 
 from models import db, User, WalletAccount, Beneficiary, Transaction
@@ -409,18 +415,66 @@ def manage_transaction(transaction_id):
         db.session.commit()
         return jsonify(message="Transaction deleted"), 200
 
-@app.route('/create-payment-intent', methods=['POST'])
-def create_payment_intent():
-    data = request.get_json()
-    amount = data.get('amount')
+# @app.route('/create-payment-intent', methods=['POST'])
+# def create_payment_intent():
+#     data = request.get_json()
+#     amount = data.get('amount')
 
-    payment_intent = stripe.PaymentIntent.create(
-        amount=amount,
-        currency='usd',
-    )
+#     payment_intent = stripe.PaymentIntent.create(
+#         amount=amount,
+#         currency='usd',
+#     )
 
-    return jsonify({'clientSecret': payment_intent.client_secret})
+#     return jsonify({'clientSecret': payment_intent.client_secret})
 
+@app.route('/banks', methods=['GET'])
+def get_all_banks():
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Cache-Control": "no-cache"
+    }
+    url = "https://api.paystack.co/bank?currency=NGN"
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+@app.route('/transferrecipient', methods=['POST'])
+def create_transfer_recipient():
+    data = request.json
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Cache-Control": "no-cache"
+    }
+    url = "https://api.paystack.co/transferrecipient"
+    fields = {
+        'type': "nuban",
+        'name': data['name'],
+        'account_number': data['account_number'],
+        'bank_code': data['bank_code'],
+        'currency': "NGN"
+    }
+    response = requests.post(url, json=fields, headers=headers)
+    return response.json()
+
+@app.route('/transfer', methods=['POST'])
+def initiate_transfer():
+    data = request.json
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Cache-Control": "no-cache"
+    }
+    url = "https://api.paystack.co/transfer"
+    fields = {
+        'source': "balance",
+        'amount': data['amount'],
+        'recipient': data['recipient_code'],
+        'reason': data['reason']
+    }
+    recipient_code = data.get('recipient_code')
+    if recipient_code is None:
+        # Handle missing recipient_code gracefully
+        return jsonify({'error': 'Recipient code is missing'}), 400
+    response = requests.post(url, json=fields, headers=headers)
+    return response.json()
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
